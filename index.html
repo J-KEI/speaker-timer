@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登壇タイマー</title>
+<style>
+  :root {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+
+  /* ---------- 設定画面 ---------- */
+  #setup {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #121212;
+    color: #f2f2f2;
+  }
+  .panel {
+    width: min(420px, 90vw);
+    background: #1b1b1b;
+    border: 1px solid #2e2e2e;
+    border-radius: 10px;
+    padding: 32px 28px;
+  }
+  .panel h1 {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0 0 24px;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .field {
+    margin-bottom: 18px;
+  }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 6px;
+  }
+  .time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .time-inputs input[type="number"] {
+    width: 80px;
+    font-size: 22px;
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+    background: #0f0f0f;
+    color: #fff;
+  }
+  .time-inputs span {
+    font-size: 20px;
+    color: #888;
+  }
+  .color-row {
+    display: flex;
+    gap: 16px;
+  }
+  .color-field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .color-field label {
+    margin: 0;
+    flex: 1;
+  }
+  input[type="color"] {
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+  }
+  .presets {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .presets button {
+    flex: 1;
+    padding: 6px 0;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+    background: #222;
+    color: #ccc;
+    cursor: pointer;
+  }
+  .presets button:hover { background: #2c2c2c; }
+
+  #start-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px 0;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #000;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  #start-btn:hover { background: #e6e6e6; }
+
+  .hint {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #777;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* ---------- タイマー画面 ---------- */
+  #timer-screen {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-color);
+    transition: background-color 0.15s ease;
+  }
+  #clock {
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+    font-weight: bold;
+    font-size: 34vw;
+    line-height: 1;
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+  #clock.overtime { color: #ffffff; }
+
+  #controls {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #timer-screen:hover #controls,
+  #controls:focus-within {
+    opacity: 0.9;
+  }
+  #controls button {
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    cursor: pointer;
+    backdrop-filter: blur(2px);
+  }
+  #controls button:hover { background: rgba(0,0,0,0.8); }
+
+  @media (max-width: 700px) {
+    #clock { font-size: 26vw; }
+  }
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <div class="panel">
+    <h1>登壇タイマー設定</h1>
+
+    <div class="field">
+      <label>持ち時間</label>
+      <div class="time-inputs">
+        <input type="number" id="input-min" min="0" max="180" value="5">
+        <span>分</span>
+        <input type="number" id="input-sec" min="0" max="59" value="0">
+        <span>秒</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>色設定</label>
+      <div class="color-row">
+        <div class="color-field">
+          <input type="color" id="color-bg" value="#000000">
+          <label for="color-bg">背景色</label>
+        </div>
+        <div class="color-field">
+          <input type="color" id="color-text" value="#ffffff">
+          <label for="color-text">文字色</label>
+        </div>
+      </div>
+      <div class="presets">
+        <button type="button" data-bg="#000000" data-text="#ffffff">黒背景 / 白文字</button>
+        <button type="button" data-bg="#ffffff" data-text="#000000">白背景 / 黒文字</button>
+        <button type="button" data-bg="#000000" data-text="#ffd400">黒背景 / 黄文字</button>
+      </div>
+    </div>
+
+    <button id="start-btn">開始（全画面表示）</button>
+    <p class="hint">開始すると全画面表示になります。<br>0になった後は自動でカウントアップに切り替わり、背景が赤で1秒ごとに点滅します。<br>Escキーで全画面を終了できます。</p>
+  </div>
+</div>
+
+<div id="timer-screen">
+  <div id="clock">00:00</div>
+  <div id="controls">
+    <button id="pause-btn">一時停止</button>
+    <button id="reset-btn">設定に戻る</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const setup = document.getElementById('setup');
+  const timerScreen = document.getElementById('timer-screen');
+  const clockEl = document.getElementById('clock');
+  const startBtn = document.getElementById('start-btn');
+  const pauseBtn = document.getElementById('pause-btn');
+  const resetBtn = document.getElementById('reset-btn');
+  const inputMin = document.getElementById('input-min');
+  const inputSec = document.getElementById('input-sec');
+  const colorBg = document.getElementById('color-bg');
+  const colorText = document.getElementById('color-text');
+  const presetButtons = document.querySelectorAll('.presets button');
+
+  let totalSeconds = 0;   // 残り(正)またはマイナス経過(負)を表す秒数のカウンタとは別に管理
+  let remaining = 0;      // 残り秒数。0未満は超過秒数（カウントアップ）
+  let intervalId = null;
+  let running = false;
+  let blinkOn = false;
+  let normalBg = '#000000';
+  let normalText = '#ffffff';
+
+  presetButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      colorBg.value = btn.dataset.bg;
+      colorText.value = btn.dataset.text;
+    });
+  });
+
+  function formatTime(sec) {
+    const s = Math.abs(sec);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+  }
+
+  function applyNormalColors() {
+    document.documentElement.style.setProperty('--bg-color', normalBg);
+    document.documentElement.style.setProperty('--text-color', normalText);
+    clockEl.classList.remove('overtime');
+  }
+
+  function requestFS(el) {
+    const p = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (p) { p.call(el); }
+  }
+
+  function exitFSIfNeeded() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen && document.exitFullscreen();
+    }
+  }
+
+  function tick() {
+    remaining -= 1;
+    render();
+  }
+
+  function render() {
+    if (remaining >= 0) {
+      clockEl.textContent = formatTime(remaining);
+      applyNormalColors();
+    } else {
+      // 超過モード：カウントアップ表示、背景は赤で1秒毎に点滅
+      clockEl.textContent = formatTime(remaining);
+      clockEl.classList.add('overtime');
+      blinkOn = !blinkOn;
+      document.documentElement.style.setProperty('--bg-color', blinkOn ? '#e60000' : '#000000');
+      document.documentElement.style.setProperty('--text-color', '#ffffff');
+    }
+  }
+
+  function start() {
+    const m = parseInt(inputMin.value, 10) || 0;
+    const s = parseInt(inputSec.value, 10) || 0;
+    remaining = m * 60 + s;
+    normalBg = colorBg.value;
+    normalText = colorText.value;
+
+    setup.style.display = 'none';
+    timerScreen.style.display = 'flex';
+    requestFS(document.documentElement);
+
+    render();
+    running = true;
+    pauseBtn.textContent = '一時停止';
+    clearInterval(intervalId);
+    intervalId = setInterval(tick, 1000);
+  }
+
+  function togglePause() {
+    if (running) {
+      clearInterval(intervalId);
+      running = false;
+      pauseBtn.textContent = '再開';
+    } else {
+      intervalId = setInterval(tick, 1000);
+      running = true;
+      pauseBtn.textContent = '一時停止';
+    }
+  }
+
+  function reset() {
+    clearInterval(intervalId);
+    running = false;
+    exitFSIfNeeded();
+    timerScreen.style.display = 'none';
+    setup.style.display = 'flex';
+  }
+
+  startBtn.addEventListener('click', start);
+  pauseBtn.addEventListener('click', togglePause);
+  resetBtn.addEventListener('click', reset);
+
+  document.addEventListener('keydown', (e) => {
+    if (timerScreen.style.display === 'flex') {
+      if (e.code === 'Space') { e.preventDefault(); togglePause(); }
+      if (e.key === 'r' || e.key === 'R') { reset(); }
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
