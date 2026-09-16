@@ -113,11 +113,15 @@
   }
   .presets button:hover { background: #2c2c2c; }
 
-  #start-btn {
-    width: 100%;
+  .start-row {
+    display: flex;
+    gap: 10px;
     margin-top: 8px;
+  }
+  .start-row button {
+    flex: 1;
     padding: 14px 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: bold;
     border: none;
     border-radius: 8px;
@@ -126,7 +130,13 @@
     cursor: pointer;
     letter-spacing: 0.02em;
   }
-  #start-btn:hover { background: #e6e6e6; }
+  .start-row button:hover { background: #e6e6e6; }
+  #start-window-btn {
+    background: #2a2a2a;
+    color: #f2f2f2;
+    border: 1px solid #3a3a3a;
+  }
+  #start-window-btn:hover { background: #333; }
 
   .hint {
     margin-top: 14px;
@@ -224,8 +234,11 @@
       </div>
     </div>
 
-    <button id="start-btn">開始（全画面表示）</button>
-    <p class="hint">開始すると全画面表示になります。<br>0になった後は自動でカウントアップに切り替わり、背景が赤で1秒ごとに点滅します。<br>Escキーで全画面を終了できます。</p>
+    <div class="start-row">
+      <button id="start-btn">開始（全画面表示）</button>
+      <button id="start-window-btn">開始（ウィンドウ表示）</button>
+    </div>
+    <p class="hint">「全画面表示」を選ぶと全画面になります。<br>0になった後は自動でカウントアップに切り替わり、背景が赤で1秒ごとに点滅します。<br>全画面表示中はEscキーで全画面を終了できます。</p>
   </div>
 </div>
 
@@ -233,6 +246,7 @@
   <div id="clock">00:00</div>
   <div id="controls">
     <button id="pause-btn">一時停止</button>
+    <button id="restart-btn">時間をリセット</button>
     <button id="reset-btn">設定に戻る</button>
   </div>
 </div>
@@ -243,7 +257,9 @@
   const timerScreen = document.getElementById('timer-screen');
   const clockEl = document.getElementById('clock');
   const startBtn = document.getElementById('start-btn');
+  const startWindowBtn = document.getElementById('start-window-btn');
   const pauseBtn = document.getElementById('pause-btn');
+  const restartBtn = document.getElementById('restart-btn');
   const resetBtn = document.getElementById('reset-btn');
   const inputMin = document.getElementById('input-min');
   const inputSec = document.getElementById('input-sec');
@@ -253,6 +269,7 @@
 
   let totalSeconds = 0;   // 残り(正)またはマイナス経過(負)を表す秒数のカウンタとは別に管理
   let remaining = 0;      // 残り秒数。0未満は超過秒数（カウントアップ）
+  let initialSeconds = 0; // 開始時に設定した持ち時間（秒）。リセット時に使用
   let intervalId = null;
   let running = false;
   let blinkOn = false;
@@ -309,16 +326,21 @@
     }
   }
 
-  function start() {
+  function start(fullscreen) {
     const m = parseInt(inputMin.value, 10) || 0;
     const s = parseInt(inputSec.value, 10) || 0;
     remaining = m * 60 + s;
+    initialSeconds = remaining;
     normalBg = colorBg.value;
     normalText = colorText.value;
 
     setup.style.display = 'none';
     timerScreen.style.display = 'flex';
-    requestFS(document.documentElement);
+    if (fullscreen) {
+      requestFS(document.documentElement);
+    } else {
+      exitFSIfNeeded();
+    }
 
     render();
     running = true;
@@ -342,13 +364,20 @@
   function reset() {
     clearInterval(intervalId);
     running = false;
-    exitFSIfNeeded();
     timerScreen.style.display = 'none';
     setup.style.display = 'flex';
   }
 
-  startBtn.addEventListener('click', start);
+  function restartTimer() {
+    remaining = initialSeconds;
+    blinkOn = false;
+    render();
+  }
+
+  startBtn.addEventListener('click', () => start(true));
+  startWindowBtn.addEventListener('click', () => start(false));
   pauseBtn.addEventListener('click', togglePause);
+  restartBtn.addEventListener('click', restartTimer);
   resetBtn.addEventListener('click', reset);
 
   document.addEventListener('keydown', (e) => {
