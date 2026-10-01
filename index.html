@@ -113,6 +113,35 @@
   }
   .presets button:hover { background: #2c2c2c; }
 
+  .field label.check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ccc;
+    cursor: pointer;
+  }
+  .warn-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+  }
+  .warn-row .time-inputs input[type="number"] {
+    width: 64px;
+    font-size: 18px;
+    padding: 6px 4px;
+  }
+  .warn-row .time-inputs span,
+  .warn-text {
+    font-size: 14px;
+    color: #aaa;
+  }
+  .warn-row .color-field { flex: 0 0 auto; }
+  .warn-row.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
   .start-row {
     display: flex;
     gap: 10px;
@@ -234,11 +263,32 @@
       </div>
     </div>
 
+    <div class="field">
+      <label class="check-label">
+        <input type="checkbox" id="warn-enabled" checked>
+        残り時間が少なくなったら文字色を変える
+      </label>
+      <div class="warn-row" id="warn-settings">
+        <span class="warn-text">残り</span>
+        <div class="time-inputs">
+          <input type="number" id="warn-min" min="0" max="180" value="1">
+          <span>分</span>
+          <input type="number" id="warn-sec" min="0" max="59" value="0">
+          <span>秒</span>
+        </div>
+        <span class="warn-text">以下で</span>
+        <div class="color-field">
+          <input type="color" id="color-warn" value="#ff3b30">
+          <label for="color-warn">文字色</label>
+        </div>
+      </div>
+    </div>
+
     <div class="start-row">
       <button id="start-btn">開始（全画面表示）</button>
       <button id="start-window-btn">開始（ウィンドウ表示）</button>
     </div>
-    <p class="hint">「全画面表示」を選ぶと全画面になります。<br>0になった後は自動でカウントアップに切り替わり、背景が赤で1秒ごとに点滅します。<br>全画面表示中はEscキーで全画面を終了できます。</p>
+    <p class="hint">「全画面表示」を選ぶと全画面になります。<br>0になった後は自動でカウントアップに切り替わり、背景が赤で1秒ごとに点滅します。<br>文字色の変更を有効にすると、指定した残り時間以下で文字色が切り替わります。<br>全画面表示中はEscキーで全画面を終了できます。</p>
   </div>
 </div>
 
@@ -266,6 +316,11 @@
   const colorBg = document.getElementById('color-bg');
   const colorText = document.getElementById('color-text');
   const presetButtons = document.querySelectorAll('.presets button');
+  const warnEnabled = document.getElementById('warn-enabled');
+  const warnSettings = document.getElementById('warn-settings');
+  const warnMin = document.getElementById('warn-min');
+  const warnSec = document.getElementById('warn-sec');
+  const colorWarn = document.getElementById('color-warn');
 
   let totalSeconds = 0;   // 残り(正)またはマイナス経過(負)を表す秒数のカウンタとは別に管理
   let remaining = 0;      // 残り秒数。0未満は超過秒数（カウントアップ）
@@ -275,6 +330,8 @@
   let blinkOn = false;
   let normalBg = '#000000';
   let normalText = '#ffffff';
+  let warnSeconds = -1;   // 残りがこの秒数以下で文字色を変更（-1は無効）
+  let warnText = '#ff3b30';
 
   presetButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -282,6 +339,12 @@
       colorText.value = btn.dataset.text;
     });
   });
+
+  function syncWarnSettings() {
+    warnSettings.classList.toggle('disabled', !warnEnabled.checked);
+  }
+  warnEnabled.addEventListener('change', syncWarnSettings);
+  syncWarnSettings();
 
   function formatTime(sec) {
     const s = Math.abs(sec);
@@ -292,7 +355,8 @@
 
   function applyNormalColors() {
     document.documentElement.style.setProperty('--bg-color', normalBg);
-    document.documentElement.style.setProperty('--text-color', normalText);
+    document.documentElement.style.setProperty('--text-color',
+      remaining <= warnSeconds ? warnText : normalText);
     clockEl.classList.remove('overtime');
   }
 
@@ -333,6 +397,14 @@
     initialSeconds = remaining;
     normalBg = colorBg.value;
     normalText = colorText.value;
+    if (warnEnabled.checked) {
+      const wm = parseInt(warnMin.value, 10) || 0;
+      const ws = parseInt(warnSec.value, 10) || 0;
+      warnSeconds = wm * 60 + ws;
+      warnText = colorWarn.value;
+    } else {
+      warnSeconds = -1;
+    }
 
     setup.style.display = 'none';
     timerScreen.style.display = 'flex';
