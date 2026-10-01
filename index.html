@@ -29,6 +29,16 @@
     justify-content: center;
     background: #121212;
     color: #f2f2f2;
+    overflow-y: auto;
+    padding: 16px 0;
+  }
+  .setup-wrap {
+    margin: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 16px;
   }
   .panel {
     width: min(420px, 90vw);
@@ -137,6 +147,21 @@
     color: #aaa;
   }
   .warn-row .color-field { flex: 0 0 auto; }
+  .advanced {
+    margin-bottom: 18px;
+    border: 1px solid #2e2e2e;
+    border-radius: 8px;
+    padding: 0 14px;
+  }
+  .advanced[open] { padding-bottom: 2px; }
+  .advanced summary {
+    padding: 10px 0;
+    font-size: 13px;
+    color: #aaa;
+    cursor: pointer;
+    user-select: none;
+  }
+  .advanced summary:hover { color: #ddd; }
   .warn-row.disabled {
     opacity: 0.4;
     pointer-events: none;
@@ -167,12 +192,60 @@
   }
   #start-window-btn:hover { background: #333; }
 
-  .hint {
-    margin-top: 14px;
+  .help-toggle {
+    display: block;
+    margin: 14px auto 0;
+    padding: 4px 8px;
     font-size: 12px;
-    color: #777;
-    text-align: center;
-    line-height: 1.6;
+    color: #888;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .help-toggle:hover { color: #ddd; }
+
+  /* 説明パネル（設定パネルの右側に展開） */
+  .panel.help {
+    width: min(320px, 90vw);
+    padding: 24px 22px;
+    animation: help-open 0.2s ease;
+  }
+  .panel.help[hidden] { display: none; }
+  .panel.help h2 {
+    font-size: 15px;
+    margin: 0 0 12px;
+  }
+  .panel.help ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: #bbb;
+    line-height: 1.7;
+  }
+  .panel.help li + li { margin-top: 6px; }
+  .help-more {
+    margin: 14px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid #2e2e2e;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+  }
+  .help-more a { color: #8ab4f8; }
+  .panel.help kbd {
+    display: inline-block;
+    padding: 0 5px;
+    font-family: inherit;
+    font-size: 12px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #111;
+    color: #eee;
+  }
+  @keyframes help-open {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
   }
 
   /* ---------- タイマー画面 ---------- */
@@ -194,7 +267,6 @@
     -webkit-font-smoothing: antialiased;
     user-select: none;
   }
-  #clock.overtime { color: #ffffff; }
 
   #controls {
     position: fixed;
@@ -222,6 +294,7 @@
     backdrop-filter: blur(2px);
   }
   #controls button:hover { background: rgba(0,0,0,0.8); }
+  #controls button[hidden] { display: none; }
 
   @media (max-width: 700px) {
     #clock { font-size: 26vw; }
@@ -231,18 +304,39 @@
 <body>
 
 <div id="setup">
+  <div class="setup-wrap">
   <div class="panel">
     <h1>登壇タイマー設定</h1>
 
     <div class="field">
       <label>持ち時間</label>
       <div class="time-inputs">
-        <input type="number" id="input-min" min="0" max="180" value="5">
+        <input type="number" id="input-min" min="0" max="180" value="18">
         <span>分</span>
         <input type="number" id="input-sec" min="0" max="59" value="0">
         <span>秒</span>
       </div>
     </div>
+
+    <div class="field">
+      <label class="check-label">
+        <input type="checkbox" id="warn-enabled" checked>
+        残り時間が少なくなったら文字色を変える
+      </label>
+      <div class="warn-row" id="warn-settings">
+        <span class="warn-text">残り</span>
+        <div class="time-inputs">
+          <input type="number" id="warn-min" min="0" max="180" value="3">
+          <span>分</span>
+          <input type="number" id="warn-sec" min="0" max="59" value="0">
+          <span>秒</span>
+        </div>
+        <span class="warn-text">以下で文字色を変更</span>
+      </div>
+    </div>
+
+    <details class="advanced">
+    <summary>詳細設定（色）</summary>
 
     <div class="field">
       <label>色設定</label>
@@ -264,31 +358,43 @@
     </div>
 
     <div class="field">
-      <label class="check-label">
-        <input type="checkbox" id="warn-enabled" checked>
-        残り時間が少なくなったら文字色を変える
-      </label>
-      <div class="warn-row" id="warn-settings">
-        <span class="warn-text">残り</span>
-        <div class="time-inputs">
-          <input type="number" id="warn-min" min="0" max="180" value="1">
-          <span>分</span>
-          <input type="number" id="warn-sec" min="0" max="59" value="0">
-          <span>秒</span>
-        </div>
-        <span class="warn-text">以下で</span>
+      <div class="warn-row">
+        <span class="warn-text">残り時間が少ない時の</span>
         <div class="color-field">
-          <input type="color" id="color-warn" value="#ff3b30">
+          <input type="color" id="color-warn" value="#ffd400">
           <label for="color-warn">文字色</label>
         </div>
       </div>
     </div>
 
+    <div class="field">
+      <div class="warn-row">
+        <span class="warn-text">時間超過後（カウントアップ中）の</span>
+        <div class="color-field">
+          <input type="color" id="color-over" value="#ff0000">
+          <label for="color-over">文字色</label>
+        </div>
+      </div>
+    </div>
+    </details>
+
     <div class="start-row">
       <button id="start-btn">開始（全画面表示）</button>
       <button id="start-window-btn">開始（ウィンドウ表示）</button>
     </div>
-    <p class="hint">「全画面表示」を選ぶと全画面になります。<br>0になった後は自動でカウントアップに切り替わり、背景が赤で1秒ごとに点滅します。<br>文字色の変更を有効にすると、指定した残り時間以下で文字色が切り替わります。<br>全画面表示中はEscキーで全画面を終了できます。</p>
+    <button type="button" class="help-toggle" id="help-toggle" aria-expanded="false" aria-controls="help-panel">使い方を表示 ▶</button>
+  </div>
+
+  <aside class="panel help" id="help-panel" hidden>
+    <h2>使い方</h2>
+    <ul>
+      <li>「全画面表示」を選ぶと全画面になります。全画面表示中は <kbd>Esc</kbd> で全画面を終了できます。</li>
+      <li>文字色の変更を有効にすると、指定した残り時間以下で文字色が切り替わります。</li>
+      <li>0になった後は自動でカウントアップに切り替わり、背景が白と黒で1秒ごとに点滅します（文字色は詳細設定で指定可能）。</li>
+      <li>キー操作：<kbd>Space</kbd> カウント開始/停止、<kbd>R</kbd> 時間をリセット、<kbd>S</kbd> 設定に戻る（<kbd>R</kbd>・<kbd>S</kbd> は一時停止中のみ）</li>
+    </ul>
+    <p class="help-more">このアプリに関する詳細は <a href="https://github.com/J-KEI/speaker-timer" target="_blank" rel="noopener">https://github.com/J-KEI/speaker-timer</a> をご参照ください。</p>
+  </aside>
   </div>
 </div>
 
@@ -315,12 +421,15 @@
   const inputSec = document.getElementById('input-sec');
   const colorBg = document.getElementById('color-bg');
   const colorText = document.getElementById('color-text');
+  const helpToggle = document.getElementById('help-toggle');
+  const helpPanel = document.getElementById('help-panel');
   const presetButtons = document.querySelectorAll('.presets button');
   const warnEnabled = document.getElementById('warn-enabled');
   const warnSettings = document.getElementById('warn-settings');
   const warnMin = document.getElementById('warn-min');
   const warnSec = document.getElementById('warn-sec');
   const colorWarn = document.getElementById('color-warn');
+  const colorOver = document.getElementById('color-over');
 
   let totalSeconds = 0;   // 残り(正)またはマイナス経過(負)を表す秒数のカウンタとは別に管理
   let remaining = 0;      // 残り秒数。0未満は超過秒数（カウントアップ）
@@ -331,13 +440,21 @@
   let normalBg = '#000000';
   let normalText = '#ffffff';
   let warnSeconds = -1;   // 残りがこの秒数以下で文字色を変更（-1は無効）
-  let warnText = '#ff3b30';
+  let warnText = '#ffd400';
+  let overText = '#ff0000';
 
   presetButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       colorBg.value = btn.dataset.bg;
       colorText.value = btn.dataset.text;
     });
+  });
+
+  helpToggle.addEventListener('click', () => {
+    const open = helpPanel.hidden;
+    helpPanel.hidden = !open;
+    helpToggle.setAttribute('aria-expanded', String(open));
+    helpToggle.textContent = open ? '使い方を閉じる ◀' : '使い方を表示 ▶';
   });
 
   function syncWarnSettings() {
@@ -381,12 +498,12 @@
       clockEl.textContent = formatTime(remaining);
       applyNormalColors();
     } else {
-      // 超過モード：カウントアップ表示、背景は赤で1秒毎に点滅
+      // 超過モード：カウントアップ表示、背景は白と黒で1秒毎に点滅
       clockEl.textContent = formatTime(remaining);
       clockEl.classList.add('overtime');
       blinkOn = !blinkOn;
-      document.documentElement.style.setProperty('--bg-color', blinkOn ? '#e60000' : '#000000');
-      document.documentElement.style.setProperty('--text-color', '#ffffff');
+      document.documentElement.style.setProperty('--bg-color', blinkOn ? '#ffffff' : '#000000');
+      document.documentElement.style.setProperty('--text-color', overText);
     }
   }
 
@@ -397,6 +514,7 @@
     initialSeconds = remaining;
     normalBg = colorBg.value;
     normalText = colorText.value;
+    overText = colorOver.value;
     if (warnEnabled.checked) {
       const wm = parseInt(warnMin.value, 10) || 0;
       const ws = parseInt(warnSec.value, 10) || 0;
@@ -416,21 +534,27 @@
 
     render();
     running = true;
-    pauseBtn.textContent = '一時停止';
+    updateControls();
     clearInterval(intervalId);
     intervalId = setInterval(tick, 1000);
+  }
+
+  // カウント中は一時停止のみ、停止中は再開・リセット・設定に戻るを表示
+  function updateControls() {
+    pauseBtn.textContent = running ? '一時停止' : '再開';
+    restartBtn.hidden = running;
+    resetBtn.hidden = running;
   }
 
   function togglePause() {
     if (running) {
       clearInterval(intervalId);
       running = false;
-      pauseBtn.textContent = '再開';
     } else {
       intervalId = setInterval(tick, 1000);
       running = true;
-      pauseBtn.textContent = '一時停止';
     }
+    updateControls();
   }
 
   function reset() {
@@ -455,7 +579,9 @@
   document.addEventListener('keydown', (e) => {
     if (timerScreen.style.display === 'flex') {
       if (e.code === 'Space') { e.preventDefault(); togglePause(); }
-      if (e.key === 'r' || e.key === 'R') { reset(); }
+      // R / S は誤操作防止のため一時停止中のみ有効
+      if (!running && (e.key === 'r' || e.key === 'R')) { restartTimer(); }
+      if (!running && (e.key === 's' || e.key === 'S')) { reset(); }
     }
   });
 })();
