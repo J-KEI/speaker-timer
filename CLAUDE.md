@@ -36,8 +36,10 @@
 
 ## デプロイ
 
-- `main` ブランチへの push で `.github/workflows/deploy.yml` から GitHub Pages に自動デプロイされる。
-- 静的ファイルのみのため、ビルドステップは無し（`actions/upload-pages-artifact` でリポジトリ直下をそのまま公開）。
+- 公開URL：https://speakertimer.static.jp/
+- XServer Statics の GitHub 連携による自動デプロイ。`main` ブランチへの push でリポジトリ直下がそのまま公開される。
+- 静的ファイルのみのため、ビルドステップは無し。
+- GitHub Pages は使用しない。
 
 ## 作業時の注意
 
